@@ -1,41 +1,56 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Item } from './items.model'
-import type { CreateItemDTO } from './dto/create-item.dto'
-import {v4 as uuid} from 'uuid'
+import { Item, ItemStatus } from '@prisma/client'
+import { CreateItemDTO } from './dto/create-item.dto'
+import { PrismaService } from '../prisma/prisma.service'
 
 @Injectable()
 export class ItemsService {
-  private items: Item[] = []
+  constructor(private readonly prismaService: PrismaService) {}
 
-  findAll() {
-    return this.items
+  async findAll() {
+    return await this.prismaService.item.findMany()
   }
 
-  findById(id: string) {
-    const found = this.items.find((item) => item.id === id)
+  async findById(id: string) {
+    const found = await this.prismaService.item.findUnique({
+      where: {
+        id,
+      },
+    })
     if (!found) {
       throw new NotFoundException()
     }
     return found
   }
 
-  create(createItemDTO: CreateItemDTO): Item {
-    const item: Item = {
-      id: uuid(),
-      ...createItemDTO,
-      status: 'ON_SALE'
-    }
-    this.items.push(item)
-    return item
+  async create(createItemDTO: CreateItemDTO): Promise<Item> {
+    const {name, price, description} = createItemDTO
+    return await this.prismaService.item.create({
+      data: {
+        name,
+        price,
+        description,
+        status: ItemStatus.ON_SALE
+      }
+    })
   }
 
-  updateStauts(id: string): Item {
-    const item = this.findById(id)
-    item.status = 'SOLD_OUT'
-    return item
+  async updateStauts(id: string) {
+    return await this.prismaService.item.update({
+      where: {
+        id,
+      },
+      data: {
+        status: ItemStatus.SOLE_OUT
+      }
+    })
   }
 
-  delete(id: string) {
-    this.items = this.items.filter((item) => item.id !== id)
+  async delete(id: string) {
+    await this.prismaService.item.delete({
+      where: {
+        id
+      }
+    })
   }
 }

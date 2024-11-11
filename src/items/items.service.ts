@@ -23,14 +23,15 @@ export class ItemsService {
     return found
   }
 
-  async create(createItemDTO: CreateItemDTO): Promise<Item> {
+  async create(createItemDTO: CreateItemDTO, userId: string): Promise<Item> {
     const {name, price, description} = createItemDTO
     return await this.prismaService.item.create({
       data: {
         name,
         price,
         description,
-        status: ItemStatus.ON_SALE
+        status: ItemStatus.ON_SALE,
+        userId: userId,
       }
     })
   }
@@ -46,10 +47,11 @@ export class ItemsService {
     })
   }
 
-  async delete(id: string) {
+  async delete(id: string, userId: string) {
     await this.prismaService.item.delete({
       where: {
-        id
+        id,
+        userId,
       }
     })
   }
